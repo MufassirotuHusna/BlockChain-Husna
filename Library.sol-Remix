@@ -1,0 +1,73 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Library {
+    address public admin;
+    
+    struct Book {
+        string isbn;
+        string title;
+        uint256 year;
+        string author;
+    }
+    
+    mapping(string => Book) public books;
+    
+    event BookAdded(string indexed isbn);
+    event BookUpdated(string indexed isbn);
+    event BookDeleted(string indexed isbn);
+    
+    constructor() {
+        admin = msg.sender;
+    }
+    
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin can perform this action");
+        _;
+    }
+    
+    function addBook(string memory _isbn, string memory _title, uint256 _year, string memory _author) public onlyAdmin {
+        require(bytes(_isbn).length > 0, "ISBN cannot be empty");
+        require(bytes(_title).length > 0, "Title cannot be empty");
+        require(bytes(_author).length > 0, "Author cannot be empty");
+        
+        Book memory newBook = Book(_isbn, _title, _year, _author);
+        books[_isbn] = newBook;
+        
+        emit BookAdded(_isbn);
+    }
+    
+    function updateBook(string memory _isbn, string memory _title, uint256 _year, string memory _author) public onlyAdmin {
+        require(bytes(_isbn).length > 0, "ISBN cannot be empty");
+        require(bytes(_title).length > 0, "Title cannot be empty");
+        require(bytes(_author).length > 0, "Author cannot be empty");
+        
+        require(bytes(books[_isbn].isbn).length > 0, "Book does not exist");
+        
+        Book storage updatedBook = books[_isbn];
+        updatedBook.title = _title;
+        updatedBook.year = _year;
+        updatedBook.author = _author;
+        
+        emit BookUpdated(_isbn);
+    }
+    
+    function deleteBook(string memory _isbn) public onlyAdmin {
+        require(bytes(_isbn).length > 0, "ISBN cannot be empty");
+        
+        require(bytes(books[_isbn].isbn).length > 0, "Book does not exist");
+        
+        delete books[_isbn];
+        
+        emit BookDeleted(_isbn);
+    }
+    
+    function getBookByISBN(string memory _isbn) public view returns (string memory, string memory, uint256, string memory) {
+        require(bytes(_isbn).length > 0, "ISBN cannot be empty");
+        
+        Book memory book = books[_isbn];
+        require(bytes(book.isbn).length > 0, "Book not found");
+        
+        return (book.isbn, book.title, book.year, book.author);
+    }
+}
